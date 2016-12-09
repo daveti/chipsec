@@ -57,6 +57,8 @@ class CPU(hal_base.HALBase):
     def __init__(self, cs):
         super(CPU, self).__init__(cs)
         self.helper = cs.helper
+        # daveti: internal debug flag
+        self.debug = True
 
     def read_cr(self, cpu_thread_id, cr_number ):
         value = self.helper.read_cr( cpu_thread_id, cr_number )
@@ -196,4 +198,39 @@ class CPU(hal_base.HALBase):
             if logger().HAL: logger().log( '[cpu%d] found paging hierarchy base (CR3): 0x%08X' % (tid,cr3) )
             self.dump_page_tables( cr3 )
 
-    
+    #
+    # Check for UMIP (User-Mode Instruction Prevention, bit 11 of CR4)
+    # Dec 8, 2016
+    # daveti
+    #
+    def is_umip_enabled_all(self):
+	umip_bit_mask = 0x0800
+        for tid in range(self.cs.msr.get_cpu_thread_count()):
+            cr4 = self.read_cr(tid, 4)
+            if self.debug:
+                print('[cpu%d] dumping CR4: 0x%08X' % (tid, cr4))
+            if not (cr4 & umip_bit_mask):
+                if logger().HAL:
+                    logger().log('[cpu%d] found UMIP disabled (CR4): 0x%08X' % (tid, cr4))
+                return False
+        return True
+
+    #
+    # Enable UMIP for all CPUs
+    # Dec 9, 2016
+    # daveti
+    #
+    def enable_umip_all(self):
+        umip_bit_mask = 0x0800
+        for tid in range(self.cs.msr.get_cpu_thread_count()):
+            cr4 = self.read_cr(tid, 4)
+            if self.debug:
+                print('[cpud%d] dumping current CR4: 0x%08X' % (tid, cr4))
+            cr4 |= umip_bit_mask
+            self.write_cr(tid, 4, cr4)
+            cr4 = self.read_cr(tid, 4)
+            if self.debug:
+                print('[cpu%d] dumping new CR4: 0x%08X' % (tid, cr4))
+            if logger().HAL:
+                logger().log('[cpu%d] had UMIP enabled (CR4): 0x%08X' % (tid, cr4))
+

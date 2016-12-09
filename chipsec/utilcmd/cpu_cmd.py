@@ -40,6 +40,7 @@ class CPUCommand(BaseCommand):
     >>> chipsec_util cpu cr <cpu_id> <cr_number> [value]
     >>> chipsec_util cpu cpuid <eax> [ecx]
     >>> chipsec_util cpu pt [paging_base_cr3]
+    >>> chipsec_util cpu umip <check|enable>
 
     Examples:
 
@@ -48,6 +49,8 @@ class CPUCommand(BaseCommand):
     >>> chipsec_util cpu cr 0 4 0x0
     >>> chipsec_util cpu cpuid 40000000
     >>> chipsec_util cpu pt
+    >>> chipsec_util cpu umip check
+    >>> chipsec_util cpu umip enable
     """
 
     def requires_driver(self):
@@ -143,6 +146,15 @@ class CPUCommand(BaseCommand):
                     self.logger.log( "[CHIPSEC][cpu%d] paging physical base (CR3): 0x%016X" % (tid,cr3) )
                     self.logger.log( "[CHIPSEC][cpu%d] dumping paging hierarchy to '%s'..." % (tid,pt_fname) )
                     self.cs.cpu.dump_page_tables( cr3, pt_fname )
+
+        # daveti: umip handling
+        elif op == "umip":
+            if len(self.argv) == 4:
+                if self.argv[3] == "check":
+                    self.logger.log( "[CHIPSEC] UMIP enabled for all: %r" % self.cs.cpu.is_umip_enabled_all())
+                elif self.argv[3] == "enable":
+                    self.cs.cpu.enable_umip_all()
+                    self.logger.log( "[CHIPSEC] UMIP enabled for all" )
 
         else:
             print CPUCommand.__doc__
