@@ -152,6 +152,8 @@ class CPUCommand(BaseCommand):
             if len(self.argv) == 4:
                 if self.argv[3] == "check":
                     self.logger.log( "[CHIPSEC] UMIP enabled for all: %r" % self.cs.cpu.is_umip_enabled_all())
+		elif self.argv[3] == "detect":
+		    self.logger.log( "[CHIPSEC] UMIP available for CPU: %r" % self.cs.cpu.is_umip_available())
                 elif self.argv[3] == "enable":
                     self.cs.cpu.enable_umip_all()
                     self.logger.log( "[CHIPSEC] UMIP enabled for all" )

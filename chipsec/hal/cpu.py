@@ -225,7 +225,7 @@ class CPU(hal_base.HALBase):
         for tid in range(self.cs.msr.get_cpu_thread_count()):
             cr4 = self.read_cr(tid, 4)
             if self.debug:
-                print('[cpud%d] dumping current CR4: 0x%08X' % (tid, cr4))
+                print('[cpu%d] dumping current CR4: 0x%08X' % (tid, cr4))
             cr4 |= umip_bit_mask
             self.write_cr(tid, 4, cr4)
             cr4 = self.read_cr(tid, 4)
@@ -233,4 +233,23 @@ class CPU(hal_base.HALBase):
                 print('[cpu%d] dumping new CR4: 0x%08X' % (tid, cr4))
             if logger().HAL:
                 logger().log('[cpu%d] had UMIP enabled (CR4): 0x%08X' % (tid, cr4))
+
+    #
+    # Detect the UMIP feature using cpuid
+    # Dec 15, 2016
+    # daveti
+    #
+    def is_umip_available(self):
+        eax = 0x7
+	ecx = 0x0
+	umip_bit_mask = 1<<2
+	(eax, ebx, ecx, edx) = self.cpuid(eax, ecx)
+	if self.debug:
+	    print("[cpu] CPUID out: EAX=0x%08X, EBX=0x%08X, ECX=0x%08X, EDX=0x%08X" % (eax, ebx, ecx, edx))
+	if logger().VERBOSE:
+	    logger().log( "[cpu] CPUID out: EAX=0x%08X, EBX=0x%08X, ECX=0x%08X, EDX=0x%08X" % (eax, ebx, ecx, edx) )
+	if ecx & umip_bit_mask:
+	    return True
+	else:
+	    return False
 
